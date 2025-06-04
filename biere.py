@@ -63,3 +63,41 @@ def bier_loeschen(bier_id):
     cursor.execute("DELETE FROM bier WHERE id = %s", (bier_id,))
     conn.commit()
     conn.close()
+
+#Dropdownmenü
+def hole_brauereien_dropdown():
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM brauerei ORDER BY name")
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
+
+#Biersuchfunktion
+def suche_biere(begriff):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            bier.id, 
+            bier.name, 
+            bierstil.bezeichnung AS stil,
+            bier.alkoholgehalt, 
+            bier.preis, 
+            IFNULL(brauerei.name, 'Unbekannt') AS brauerei_name,
+            ROUND(AVG(bewertung.sterne), 1) AS durchschnitt
+        FROM bier
+        LEFT JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN ort o ON brauerei.ort_id = o.ID_Ort
+        LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
+        LEFT JOIN bewertung ON bier.id = bewertung.bier_id
+        WHERE bier.name LIKE %s
+           OR bierstil.bezeichnung LIKE %s
+           OR brauerei.name LIKE %s
+           OR o.Ort LIKE %s
+        GROUP BY bier.id, bier.name, bierstil.bezeichnung, bier.alkoholgehalt, bier.preis, brauerei.name
+        ORDER BY bier.name
+    """, (f"%{begriff}%", f"%{begriff}%", f"%{begriff}%", f"%{begriff}%"))
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
