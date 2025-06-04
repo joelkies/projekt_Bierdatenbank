@@ -23,3 +23,18 @@ def aktualisiere_bewertung(bier_id, nutzer_id, sterne, kommentar):
     """, (sterne, kommentar, bier_id, nutzer_id))
     conn.commit()
     conn.close()
+
+#Bewertung anzeigen
+def hole_bewertungen_fuer_bier(bier_id):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT nutzer.benutzername, sterne, kommentar, erstellt_am, nutzer.id
+        FROM bewertung
+        JOIN nutzer ON bewertung.nutzer_id = nutzer.id
+        WHERE bier_id = %s
+        ORDER BY erstellt_am DESC
+    """, (bier_id,))
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
