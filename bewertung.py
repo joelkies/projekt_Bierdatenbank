@@ -38,3 +38,12 @@ def hole_bewertungen_fuer_bier(bier_id):
     daten = cursor.fetchall()
     conn.close()
     return daten
+
+#prüft ob Nutzer schon bewertet hat
+def existiert_bewertung(bier_id, nutzer_id):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM bewertung WHERE bier_id = %s AND nutzer_id = %s", (bier_id, nutzer_id))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
