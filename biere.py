@@ -20,3 +20,27 @@ def hole_alle_biere():
     daten = cursor.fetchall()
     conn.close()
     return daten
+
+#zeigt biere in gästebereich an
+def hole_alle_biere_fuer_gaeste():
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            bier.name,
+            bierstil.bezeichnung,
+            bier.alkoholgehalt,
+            bier.preis,
+            brauerei.name,
+            ort.Ort,
+            ROUND(AVG(bewertung.sterne), 1) AS durchschnitt
+        FROM bier
+        JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN ort ON brauerei.ort_id = ort.ID_Ort
+        LEFT JOIN bierstil ON bierstil.id = bier.bierstil_id
+        LEFT JOIN bewertung ON bier.id = bewertung.bier_id
+        GROUP BY bier.name, bierstil.bezeichnung, bier.alkoholgehalt, bier.preis, brauerei.name, ort.Ort
+    """)
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
