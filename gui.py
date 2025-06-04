@@ -409,3 +409,40 @@ class BierHinzufuegen(tk.Frame):
     def zurueck(self):
         self.controller.show_frame(BiereVerwaltung)
 
+
+# Formular zum Hinzufügen einer neuen Brauerei (Adminbereich)
+class BrauereiHinzufuegen(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="➕ Brauerei hinzufügen", font=("Arial", 16)).pack(pady=10)
+
+        labels = ["Name", "Straße", "Hausnummer", "Ort-ID", "Website", "Gründungsjahr"]
+        self.entries = []
+
+        for label in labels:
+            tk.Label(self, text=label).pack()
+            entry = tk.Entry(self)
+            entry.pack()
+            self.entries.append(entry)
+
+        tk.Button(self, text="Speichern", command=self.speichern).pack(pady=5)
+        tk.Button(self, text="↩ Zurück", command=self.zurueck).pack()
+
+    # Speichert die eingegebenen Brauerei-Daten in der Datenbank
+    def speichern(self):
+        from brauereien import brauerei_hinzufuegen
+        daten = [e.get() for e in self.entries]
+        if daten[0]:
+            brauerei_hinzufuegen(*daten)
+            tk.messagebox.showinfo("Erfolg", "Brauerei wurde hinzugefügt!")
+            self.controller.frames[BrauereienVerwaltung].lade_inhalt()
+            self.controller.show_frame(BrauereienVerwaltung)
+        else:
+            tk.messagebox.showerror("Fehler", "Name darf nicht leer sein.")
+
+    # Zurück zur Brauereien-Verwaltung
+    def zurueck(self):
+        self.controller.show_frame(BrauereienVerwaltung)
+
