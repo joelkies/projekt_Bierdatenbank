@@ -546,3 +546,10 @@ class NutzerBearbeiten(tk.Frame):
         self.controller.frames[NutzerVerwaltung].lade_inhalt()
         self.controller.show_frame(NutzerVerwaltung)
 
+# Einfaches Such-Interface (Platzhalter) für die Nutzerverwaltung
+class NutzerSuchen(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        tk.Label(self, text="Nutzer suchen").pack()
+        tk.Button(self, text="Zurück", command=lambda: controller.show_frame(NutzerVerwaltung)).pack()
+
