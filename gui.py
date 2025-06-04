@@ -36,7 +36,7 @@ class App(tk.Tk):
     def show_frame(self, seite):
         frame = self.frames[seite]
         frame.tkraise()
-        
+
 # Login-Seite mit Eingabe von Nutzername und Passwort
 class LoginSeite(tk.Frame):
     def __init__(self, parent, controller):
@@ -57,12 +57,13 @@ class LoginSeite(tk.Frame):
         tk.Button(self, text="Registrieren", command=self.registrieren).pack()
 
     def login(self):
+        # Login-Logik
         benutzer = self.e_user.get()
         pw = self.e_pw.get()
-        nutzer_info = login(benutzer, pw)  
+        nutzer_info = login(benutzer, pw)  # ruft Login-Funktion auf
 
         if not nutzer_info:
-            return  
+            return  # kein Zugriff bei falschen Daten
 
         nutzer_id, rolle = nutzer_info
         self.controller.nutzer_id = nutzer_id  # 👈 
@@ -71,7 +72,7 @@ class LoginSeite(tk.Frame):
             self.controller.show_frame(AdminMenue)
         elif rolle == 2:
             self.controller.show_frame(GastMenue)
-
+    # Popup für neue Registrierung
     def registrieren(self):
         reg_win = tk.Toplevel(self)
         reg_win.title("Registrieren")
@@ -90,3 +91,61 @@ class LoginSeite(tk.Frame):
             reg_win.destroy()
 
         tk.Button(reg_win, text="Registrieren", command=speichern).pack(pady=10)
+
+# Admin-Menü nach erfolgreichem Admin-Login
+
+class AdminMenue(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        tk.Label(self, text="Admin-Menü", font=("Arial", 16)).pack(pady=10)
+        # Navigation zu verschiedenen Verwaltungsbereichen
+        tk.Button(self, text="Nutzer verwalten", command=lambda: controller.show_frame(NutzerVerwaltung)).pack(pady=5)
+        tk.Button(self, text="Brauereien verwalten", command=lambda: controller.show_frame(BrauereienVerwaltung)).pack(pady=5)
+        tk.Button(self, text="Biere verwalten", command=lambda: controller.show_frame(BiereVerwaltung)).pack(pady=5)
+        tk.Button(self, text="Logout", command=lambda: controller.show_frame(LoginSeite)).pack(pady=20)
+
+# Nutzerverwaltung zeigt Tabelle aller Nutzer und bietet Zugriff auf Unterfunktionen
+
+class NutzerVerwaltung(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Nutzerverwaltung", font=("Arial", 16)).pack(pady=10)
+
+        # Treeview (Tabelle)
+        spalten = ("ID", "Benutzername", "Rolle")
+        self.tree = ttk.Treeview(self, columns=spalten, show="headings")
+        for spalte in spalten:
+            self.tree.heading(spalte, text=spalte)
+            self.tree.column(spalte, anchor="center", width=120)
+        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+
+        # Aktions-Buttons
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=10)
+
+        tk.Button(button_frame, text="🔍 Suchen", command=lambda: controller.show_frame(NutzerSuchen)).grid(row=0, column=0, padx=5)
+        tk.Button(button_frame, text="➕ Hinzufügen", command=lambda: controller.show_frame(NutzerHinzufuegen)).grid(row=0, column=1, padx=5)
+        tk.Button(button_frame, text="🔁 Bearbeiten/Löschen", command=lambda: controller.show_frame(NutzerBearbeiten)).grid(row=0, column=2, padx=5)
+        tk.Button(button_frame, text="↩ Zurück", command=lambda: controller.show_frame(AdminMenue)).grid(row=0, column=3, padx=5)
+
+
+
+        self.lade_inhalt()
+    # Lädt Nutzerdaten aus der Datenbank
+    def lade_inhalt(self, suchbegriff=""):
+        self.tree.delete(*self.tree.get_children())
+        daten = nutzer_suchen(suchbegriff)
+        for id, name, rolle in daten:
+            rolle_text = "Admin" if rolle == 1 else "Gast"
+            self.tree.insert("", "end", values=(id, name, rolle_text))
+
+    def clear_maske(self):
+        for widget in self.maske_frame.winfo_children():
+            widget.destroy()
