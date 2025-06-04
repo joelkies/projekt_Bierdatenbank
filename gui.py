@@ -446,3 +446,52 @@ class BrauereiHinzufuegen(tk.Frame):
     def zurueck(self):
         self.controller.show_frame(BrauereienVerwaltung)
 
+# Formular zum Erstellen eines neuen Benutzers (nur für Admins)
+class NutzerHinzufuegen(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="➕ Nutzer hinzufügen", font=("Arial", 16)).pack(pady=10)
+
+        # Eingabefelder
+        tk.Label(self, text="Benutzername:").pack()
+        self.e_name = tk.Entry(self)
+        self.e_name.pack()
+
+        tk.Label(self, text="Passwort:").pack()
+        self.e_pw = tk.Entry(self, show="*")
+        self.e_pw.pack()
+
+        tk.Label(self, text="Rolle (1 = Admin, 2 = Gast):").pack()
+        self.e_rolle = tk.Entry(self)
+        self.e_rolle.pack()
+
+        # Buttons
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+
+        tk.Button(btn_frame, text="Speichern", command=self.speichern).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="↩ Zurück", command=self.zurueck_und_aktualisieren).grid(row=0, column=1, padx=5)
+    
+    # Speichert den neuen Nutzer, wenn Eingaben gültig
+    def speichern(self):
+        name = self.e_name.get()
+        pw = self.e_pw.get()
+        rolle = self.e_rolle.get()
+
+        if name and pw and rolle in ["1", "2"]:
+            erfolg = nutzer_hinzufuegen(name, pw, int(rolle))
+            if erfolg:
+                messagebox.showinfo("Erfolg", "Nutzer erfolgreich hinzugefügt.")
+                self.e_name.delete(0, tk.END)
+                self.e_pw.delete(0, tk.END)
+                self.e_rolle.delete(0, tk.END)
+            else:
+                messagebox.showerror("Fehler", "Benutzername existiert bereits.")
+
+    # Zurück zur Nutzerverwaltung + Liste neu laden
+    def zurueck_und_aktualisieren(self):
+        self.controller.frames[NutzerVerwaltung].lade_inhalt()
+        self.controller.show_frame(NutzerVerwaltung)
+
