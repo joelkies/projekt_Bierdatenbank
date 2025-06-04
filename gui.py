@@ -234,3 +234,112 @@ class BrauereienVerwaltung(tk.Frame):
 
         tk.Button(self.maske_frame, text="Löschen", command=loeschen).pack(pady=5)
 
+# Admin-Ansicht zur Verwaltung aller Biere
+class BiereVerwaltung(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Bierverwaltung", font=("Arial", 16)).pack(pady=10)
+
+        # Tabelle
+        spalten = ("ID", "Name", "Stil", "Alkohol", "Preis", "Brauerei", "Ø Bewertung")
+        self.tree = ttk.Treeview(self, columns=spalten, show="headings")
+        for spalte in spalten:
+            self.tree.heading(spalte, text=spalte)
+            self.tree.column(spalte, anchor="center", width=100)
+        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+
+        # Buttons
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+
+        tk.Button(btn_frame, text="🔍 Suchen", command=self.maske_suche).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="➕ Hinzufügen", command=lambda: controller.show_frame(BierHinzufuegen)).grid(row=0, column=1, padx=5)
+        tk.Button(btn_frame, text="🗑 Löschen", command=self.maske_loeschen).grid(row=0, column=2, padx=5)
+        tk.Button(btn_frame, text="↩ Zurück", command=lambda: controller.show_frame(AdminMenue)).grid(row=0, column=3, padx=5)
+
+        # Eingabebereich
+        self.maske_frame = tk.Frame(self)
+        self.maske_frame.pack(pady=10, fill="x")
+
+        self.lade_inhalt()
+
+    # Holt Biere aus DB und zeigt sie an (optional mit Suchfilter)
+    def lade_inhalt(self, suchbegriff=""):
+        self.tree.delete(*self.tree.get_children())
+        daten = suche_biere(suchbegriff) if suchbegriff else hole_alle_biere()
+        for row in daten:
+            self.tree.insert("", "end", values=[str(x) if x is not None else "-" for x in row])
+
+    # Entfernt Inhalt aus der Eingabemaske
+    def clear_maske(self):
+        for widget in self.maske_frame.winfo_children():
+            widget.destroy()
+
+    # Zeigt Suchfeld für Biernamen
+    def maske_suche(self):
+        self.clear_maske()
+        tk.Label(self.maske_frame, text="Suchbegriff (Name):").pack()
+        entry = tk.Entry(self.maske_frame)
+        entry.pack()
+
+        def suchen():
+            self.lade_inhalt(entry.get())
+
+        tk.Button(self.maske_frame, text="Suchen", command=suchen).pack(pady=5)
+
+    # BierHinzufuegen-Frame
+    def maske_hinzufuegen(self):
+        self.clear_maske()
+        felder = ["Name", "Stil", "Alkoholgehalt (%)", "Preis (€)"]
+        entries = []
+
+        for feld in felder:
+            tk.Label(self.maske_frame, text=feld).pack()
+            e = tk.Entry(self.maske_frame)
+            e.pack()
+            entries.append(e)
+
+        tk.Label(self.maske_frame, text="Brauerei wählen:").pack()
+        brauereien = hole_brauereien_dropdown()
+        dropdown = ttk.Combobox(self.maske_frame, values=[f"{id} - {name}" for id, name in brauereien])
+        dropdown.pack()
+
+        def speichern():
+            name, stil, alk, preis = [e.get() for e in entries]
+            auswahl = dropdown.get()
+            if not name or not auswahl:
+                messagebox.showerror("Fehler", "Name und Brauerei müssen gewählt sein.")
+                return
+            brauerei_id = int(auswahl.split(" - ")[0])
+            bier_hinzufuegen(name, stil, alk, preis, brauerei_id)
+            messagebox.showinfo("Erfolg", "Bier hinzugefügt.")
+            self.lade_inhalt()
+            self.clear_maske()
+
+        tk.Button(self.maske_frame, text="Hinzufügen", command=speichern).pack(pady=5)
+
+    # Zeigt Feld zum Löschen eines Bieres per ID
+    def maske_loeschen(self):
+        self.clear_maske()
+        tk.Label(self.maske_frame, text="Bier-ID zum Löschen:").pack()
+        entry = tk.Entry(self.maske_frame)
+        entry.pack()
+
+        def loeschen():
+            bid = entry.get()
+            if bid.isdigit():
+                bier_loeschen(int(bid))
+                messagebox.showinfo("Erfolg", "Bier gelöscht.")
+                self.lade_inhalt()
+                self.clear_maske()
+            else:
+                messagebox.showerror("Fehler", "Gültige ID eingeben!")
+
+        tk.Button(self.maske_frame, text="Löschen", command=loeschen).pack(pady=5)
+
