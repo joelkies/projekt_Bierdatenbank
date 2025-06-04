@@ -343,3 +343,69 @@ class BiereVerwaltung(tk.Frame):
 
         tk.Button(self.maske_frame, text="Löschen", command=loeschen).pack(pady=5)
 
+# Formular zum Hinzufügen eines neuen Biers (Adminbereich)
+class BierHinzufuegen(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="➕ Bier hinzufügen", font=("Arial", 16)).pack(pady=10)
+
+        
+        labels = ["Name", "Alkoholgehalt (%)", "Preis (€)"]
+        self.entries = []
+
+        for label in labels:
+            tk.Label(self, text=label).pack()
+            e = tk.Entry(self)
+            e.pack()
+            self.entries.append(e)
+
+        # Brauerei-Auswahl (Dropdown)
+        tk.Label(self, text="Brauerei wählen:").pack()
+        from biere import hole_brauereien_dropdown
+        self.brauereien = hole_brauereien_dropdown()
+        self.dropdown = ttk.Combobox(self, values=[f"{id} - {name}" for id, name in self.brauereien])
+        self.dropdown.pack()
+        # Bierstil-Auswahl (Dropdown)
+        tk.Label(self, text="Bierstil wählen:").pack()
+        from bierstil import hole_bierstile_dropdown  
+        self.bierstile = hole_bierstile_dropdown()
+        self.dropdown_stil = ttk.Combobox(self, values=[f"{id} - {bez}" for id, bez in self.bierstile])
+        self.dropdown_stil.pack()
+
+        
+        tk.Button(self, text="Hinzufügen", command=self.speichern).pack(pady=5)
+        tk.Button(self, text="↩ Zurück", command=self.zurueck).pack()
+
+    # Liest alle Eingaben aus, validiert sie und speichert das neue Bier
+    def speichern(self):
+        from biere import bier_hinzufuegen
+
+        name, alk, preis = [e.get() for e in self.entries]
+
+        # Brauerei aus Dropdown lesen
+        auswahl = self.dropdown.get()
+        if not name or not auswahl:
+            tk.messagebox.showerror("Fehler", "Name und Brauerei müssen angegeben sein.")
+            return
+        brauerei_id = int(auswahl.split(" - ")[0])
+
+        # Bierstil aus zweitem Dropdown lesen
+        auswahl_stil = self.dropdown_stil.get()
+        if not auswahl_stil:
+            tk.messagebox.showerror("Fehler", "Bitte Bierstil auswählen.")
+            return
+        bierstil_id = int(auswahl_stil.split(" - ")[0])
+
+        # Jetzt Bier speichern
+        bier_hinzufuegen(name, alk, preis, brauerei_id, bierstil_id)
+
+        tk.messagebox.showinfo("Erfolg", "Bier wurde hinzugefügt.")
+        self.controller.frames[BiereVerwaltung].lade_inhalt()
+        self.controller.show_frame(BiereVerwaltung)
+
+    # Zurück zur Bier-Verwaltung
+    def zurueck(self):
+        self.controller.show_frame(BiereVerwaltung)
+
