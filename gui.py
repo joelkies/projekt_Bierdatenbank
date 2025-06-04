@@ -553,3 +553,176 @@ class NutzerSuchen(tk.Frame):
         tk.Label(self, text="Nutzer suchen").pack()
         tk.Button(self, text="Zurück", command=lambda: controller.show_frame(NutzerVerwaltung)).pack()
 
+# Gästeansicht – Bierliste mit Such-/Filterfunktion und Bewertungssystem
+class GastMenue(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Gästeansicht – Biere entdecken", font=("Arial", 16)).pack(pady=10)
+
+        # Suchfeld
+        tk.Label(self, text="Suchbegriff (Name oder Stil):").pack()
+        self.e_suche = tk.Entry(self)
+        self.e_suche.pack()
+
+        # Alkohol-Filter
+        tk.Label(self, text="Max. Alkoholgehalt (%):").pack()
+        self.e_alkohol = tk.Entry(self)
+        self.e_alkohol.pack()
+
+        # Preis-Filter
+        tk.Label(self, text="Max. Preis (€):").pack()
+        self.e_preis = tk.Entry(self)
+        self.e_preis.pack()
+
+        tk.Button(self, text="🔍 Suchen", command=self.suchen).pack(pady=5)
+        tk.Button(self, text="🌟 Top 5 Biere anzeigen", command=self.zeige_top_biere).pack(pady=5)
+
+        # Tabelle
+        spalten = ("Name", "Stil", "Alkohol", "Preis", "Brauerei", "Ort", "Ø Bewertung")
+        self.tree = ttk.Treeview(self, columns=spalten, show="headings")
+        for spalte in spalten:
+            self.tree.heading(spalte, text=spalte)
+            self.tree.column(spalte, anchor="center", width=120)
+        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tree.bind("<Double-1>", self.bewertung_popup)
+
+        # Logout
+        tk.Button(self, text="Logout", command=lambda: controller.show_frame(LoginSeite)).pack(pady=10)
+
+        self.lade_daten()
+
+    # Lädt Biere (gefiltert nach Suche/Alkohol/Preis)
+    def lade_daten(self, suchbegriff=""):
+        from biere import suche_biere_erweitert
+
+        max_alk = self.e_alkohol.get()
+        max_preis = self.e_preis.get()
+
+        try:
+            max_alk = float(max_alk) if max_alk else None
+        except:
+            max_alk = None
+
+        try:
+            max_preis = float(max_preis) if max_preis else None
+        except:
+            max_preis = None
+
+        self.tree.delete(*self.tree.get_children())
+        daten = suche_biere_erweitert(suchbegriff, max_alk, max_preis)
+
+        for row in daten:
+            self.tree.insert("", "end", values=row[1:])
+
+    # Wird durch "Suchen"-Button ausgelöst
+    def suchen(self):
+        self.lade_daten(self.e_suche.get())
+
+    # Öffnet Bewertungsfenster (nach Doppelklick auf Bier)
+    def bewertung_popup(self, event):
+        from bewertung import hole_bewertungen_fuer_bier, bewertung_hinzufuegen, existiert_bewertung, aktualisiere_bewertung
+
+        auswahl = self.tree.selection()
+        if not auswahl:
+            return
+
+        daten = self.tree.item(auswahl[0])["values"]
+        bier_name = daten[0]
+        bier_id = self.get_bier_id_by_name(bier_name)
+
+        if not bier_id:
+            return
+
+        popup = tk.Toplevel(self)
+        popup.title(f"Bewertung für: {bier_name}")
+        popup.geometry("500x400")
+
+        tk.Label(popup, text="Sterne (1–5):").pack()
+        sterne_entry = tk.Entry(popup)
+        sterne_entry.pack()
+
+        tk.Label(popup, text="Kommentar:").pack()
+        kommentar_entry = tk.Text(popup, height=4)
+        kommentar_entry.pack()
+
+        # Speichern der Bewertung
+        def absenden():
+            try:
+                sterne = int(sterne_entry.get())
+                kommentar = kommentar_entry.get("1.0", "end").strip()
+                if not 1 <= sterne <= 5:
+                    raise ValueError("Nur Werte von 1 bis 5 erlaubt.")
+
+                nutzer_id = self.controller.nutzer_id
+
+                if existiert_bewertung(bier_id, nutzer_id):
+                    aktualisiere_bewertung(bier_id, nutzer_id, sterne, kommentar)
+                    messagebox.showinfo("Aktualisiert", "Deine Bewertung wurde aktualisiert.")
+                else:
+                    bewertung_hinzufuegen(bier_id, nutzer_id, sterne, kommentar)
+                    messagebox.showinfo("Danke!", "Bewertung wurde gespeichert.")
+
+                popup.destroy()
+            except Exception as e:
+                messagebox.showerror("Fehler", f"Eingabe ungültig: {e}")
+
+        tk.Button(popup, text="Absenden", command=absenden).pack(pady=10)
+
+        tk.Label(popup, text="Vorherige Bewertungen:", font=("Arial", 12, "bold")).pack(pady=(10, 0))
+
+        rahmen = tk.Frame(popup)
+        rahmen.pack(fill="both", expand=True, padx=10)
+
+        canvas = tk.Canvas(rahmen, height=150)
+        scroll = tk.Scrollbar(rahmen, orient="vertical", command=canvas.yview)
+        frame_in_canvas = tk.Frame(canvas)
+
+        frame_in_canvas.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=frame_in_canvas, anchor="nw")
+        canvas.configure(yscrollcommand=scroll.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+
+        bewertungen = hole_bewertungen_fuer_bier(bier_id)
+        nutzer_id_aktuell = self.controller.nutzer_id
+        eigene_bewertung = None
+
+        if not bewertungen:
+            tk.Label(frame_in_canvas, text="Noch keine Bewertungen vorhanden.").pack(anchor="w", pady=5)
+        else:
+            for nutzer, sterne, kommentar, zeit, bew_nutzer_id in bewertungen:
+                farbe = "black"
+                if bew_nutzer_id == nutzer_id_aktuell:
+                    farbe = "blue"
+                    eigene_bewertung = (sterne, kommentar)
+
+                tk.Label(frame_in_canvas, text=f"{nutzer} – {sterne}★ – {zeit.strftime('%d.%m.%Y %H:%M')}", font=("Arial", 10, "bold"), fg=farbe).pack(anchor="w", pady=(5, 0))
+                tk.Label(frame_in_canvas, text=kommentar, wraplength=460, justify="left", fg=farbe).pack(anchor="w")
+            if eigene_bewertung:
+                def bearbeiten():
+                    sterne_entry.delete(0, "end")
+                    kommentar_entry.delete("1.0", "end")
+                    sterne_entry.insert(0, eigene_bewertung[0])
+                    kommentar_entry.insert("1.0", eigene_bewertung[1])
+
+                tk.Button(frame_in_canvas, text="✏️ Eigene Bewertung bearbeiten", command=bearbeiten).pack(pady=10)
+
+    # Holt Bier-ID anhand des Namens (intern benötigt)
+    def get_bier_id_by_name(self, biername):
+        from biere import hole_alle_biere_fuer_gaeste
+        for bier in hole_alle_biere_fuer_gaeste():
+            if bier[1] == biername:
+                return bier[0]
+        return None
+    
+    # Zeigt Top 5 am besten bewertete Biere
+    def zeige_top_biere(self):
+        from biere import hole_top_biere
+        self.tree.delete(*self.tree.get_children())
+        daten = hole_top_biere()
+        for row in daten:
+            self.tree.insert("", "end", values=row[1:])
+
