@@ -25,3 +25,23 @@ def registrieren(benutzername,passwort):
 
     messagebox.showinfo("Erfolg", "Registrierung war erfolgreich!")
     return True
+
+def login(benutzername, passwort):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, passwort_hash, rolle_id FROM nutzer WHERE benutzername = %s", (benutzername,))
+    ergebnis = cursor.fetchone()
+    conn.close()
+
+    if not ergebnis:
+        messagebox.showerror("Fehler", "Benutzername nicht gefunden.")
+        return None
+
+    nutzer_id, gespeicherter_hash, rolle_id = ergebnis
+
+    if bcrypt.checkpw(passwort.encode('utf-8'), gespeicherter_hash.encode('utf-8')):
+        return nutzer_id, rolle_id
+    else:
+        messagebox.showerror("Fehler", "Falsches Passwort.")
+        return None
