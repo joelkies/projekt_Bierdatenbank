@@ -44,3 +44,22 @@ def hole_alle_biere_fuer_gaeste():
     daten = cursor.fetchall()
     conn.close()
     return daten
+
+#fügt neues bier in datenbank hinzu
+def bier_hinzufuegen(name, alkohol, preis, brauerei_id, bierstil_id):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO bier (name, alkoholgehalt, preis, brauerei_id, bierstil_id) VALUES (%s, %s, %s, %s, %s)",
+        (name, alkohol, preis, brauerei_id, bierstil_id)
+    )
+    conn.commit()
+    conn.close()
+
+#Bier löschen
+def bier_loeschen(bier_id):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM bier WHERE id = %s", (bier_id,))
+    conn.commit()
+    conn.close()
