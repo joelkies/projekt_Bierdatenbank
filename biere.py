@@ -101,3 +101,28 @@ def suche_biere(begriff):
     daten = cursor.fetchall()
     conn.close()
     return daten
+
+#Best bewertete biere
+def hole_top_biere(limit=5):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            bier.name, 
+            bierstil.bezeichnung AS stil,
+            bier.alkoholgehalt,
+            bier.preis,
+            IFNULL(brauerei.name, 'Unbekannt') AS brauerei_name,
+            ROUND(AVG(bewertung.sterne), 2) AS durchschnitt
+        FROM bier
+        LEFT JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
+        LEFT JOIN bewertung ON bier.id = bewertung.bier_id
+        GROUP BY bier.id
+        HAVING durchschnitt IS NOT NULL
+        ORDER BY durchschnitt DESC
+        LIMIT %s
+    """, (limit,))
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
