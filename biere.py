@@ -126,3 +126,43 @@ def hole_top_biere(limit=5):
     daten = cursor.fetchall()
     conn.close()
     return daten
+
+#Biersuche mit erweiterten filter
+def suche_biere_erweitert(suchbegriff="", max_alkohol=None, max_preis=None):
+    conn = verbinde_db()
+    cursor = conn.cursor()
+
+    sql = """
+        SELECT bier.id, bier.name, bierstil.bezeichnung AS stil,
+               bier.alkoholgehalt, bier.preis,
+               IFNULL(brauerei.name, 'Unbekannt') AS brauerei_name,
+               o.Ort,
+               ROUND(AVG(bewertung.sterne), 1) AS durchschnitt
+        FROM bier
+        JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN ort o ON brauerei.ort_id = o.ID_Ort
+        LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
+        LEFT JOIN bewertung ON bier.id = bewertung.bier_id
+        WHERE (bier.name LIKE %s OR bierstil.bezeichnung LIKE %s)
+    """
+
+    werte = [f"%{suchbegriff}%", f"%{suchbegriff}%"]
+
+    if max_alkohol is not None:
+        sql += " AND bier.alkoholgehalt <= %s"
+        werte.append(max_alkohol)
+
+    if max_preis is not None:
+        sql += " AND bier.preis <= %s"
+        werte.append(max_preis)
+
+    sql += """
+        GROUP BY bier.id, bier.name, bierstil.bezeichnung,
+                 bier.alkoholgehalt, bier.preis, brauerei.name, o.Ort
+        ORDER BY bier.name
+    """
+
+    cursor.execute(sql, tuple(werte))
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
