@@ -149,3 +149,88 @@ class NutzerVerwaltung(tk.Frame):
     def clear_maske(self):
         for widget in self.maske_frame.winfo_children():
             widget.destroy()
+
+# Ansicht für Admins zur Verwaltung aller Brauereien
+class BrauereienVerwaltung(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Brauereiverwaltung", font=("Arial", 16)).pack(pady=10)
+
+        # Tabelle
+        spalten = ("ID", "Name", "Straße", "Hausnr", "PLZ", "Ort", "Website", "Gründungsjahr")
+        self.tree = ttk.Treeview(self, columns=spalten, show="headings")
+
+        for spalte in spalten:
+            self.tree.heading(spalte, text=spalte)
+            self.tree.column(spalte, anchor="center", width=120)
+
+        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Scrollbar nicht vergessen
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+
+        # Buttonleiste
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+
+        tk.Button(btn_frame, text="🔍 Suchen", command=self.maske_suche).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="➕ Hinzufügen", command=lambda: controller.show_frame(BrauereiHinzufuegen)).grid(row=0, column=1, padx=5)
+        tk.Button(btn_frame, text="🗑 Löschen", command=self.maske_loeschen).grid(row=0, column=2, padx=5)
+        tk.Button(btn_frame, text="↩ Zurück", command=lambda: controller.show_frame(AdminMenue)).grid(row=0, column=3, padx=5)
+
+        # Eingabemaske
+        self.maske_frame = tk.Frame(self)
+        self.maske_frame.pack(pady=10, fill="x")
+
+        self.lade_inhalt()
+
+    # Holt alle Brauereien aus DB und füllt die Tabelle
+    def lade_inhalt(self, suchbegriff=""):
+        self.tree.delete(*self.tree.get_children())
+        daten = hole_alle_brauereien()
+
+        print("DEBUG Daten:", daten)  # ← Zeigt dir, was zurückkommt
+
+        for row in daten:
+            self.tree.insert("", "end", values=row)
+
+    # Löscht alle Elemente im unteren Eingabebereich
+    def clear_maske(self):
+        for widget in self.maske_frame.winfo_children():
+            widget.destroy()
+
+    # Zeigt Eingabefeld zum Suchen nach Name
+    def maske_suche(self):
+        self.clear_maske()
+        tk.Label(self.maske_frame, text="Suchbegriff (Name):").pack()
+        entry = tk.Entry(self.maske_frame)
+        entry.pack()
+
+        def suchen():
+            self.lade_inhalt(entry.get())
+
+        tk.Button(self.maske_frame, text="Suchen", command=suchen).pack(pady=5)
+
+    # Zeigt Eingabe zum Löschen einer Brauerei nach ID
+    def maske_loeschen(self):
+        self.clear_maske()
+        tk.Label(self.maske_frame, text="Brauerei-ID zum Löschen:").pack()
+        entry = tk.Entry(self.maske_frame)
+        entry.pack()
+
+        def loeschen():
+            bid = entry.get()
+            if bid.isdigit():
+                brauerei_loeschen(int(bid))
+                messagebox.showinfo("Erfolg", "Brauerei gelöscht.")
+                self.lade_inhalt()
+                self.clear_maske()
+            else:
+                messagebox.showerror("Fehler", "Gültige ID eingeben!")
+
+        tk.Button(self.maske_frame, text="Löschen", command=loeschen).pack(pady=5)
+
