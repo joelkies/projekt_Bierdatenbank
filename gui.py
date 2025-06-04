@@ -495,3 +495,54 @@ class NutzerHinzufuegen(tk.Frame):
         self.controller.frames[NutzerVerwaltung].lade_inhalt()
         self.controller.show_frame(NutzerVerwaltung)
 
+# Seite für Admins zum Bearbeiten oder Löschen von Nutzern
+class NutzerBearbeiten(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="🔁 Nutzer bearbeiten / löschen", font=("Arial", 16)).pack(pady=10)
+
+        tk.Label(self, text="Nutzer-ID:").pack()
+        self.e_id = tk.Entry(self)
+        self.e_id.pack()
+
+        tk.Label(self, text="Neue Rolle (1 = Admin, 2 = Gast):").pack()
+        self.e_rolle = tk.Entry(self)
+        self.e_rolle.pack()
+
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+
+        tk.Button(btn_frame, text="Rolle ändern", command=self.rolle_aendern).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="Nutzer löschen", command=self.loeschen).grid(row=0, column=1, padx=5)
+        tk.Button(btn_frame, text="↩ Zurück", command=self.zurueck_und_aktualisieren).grid(row=0, column=2, padx=5)
+
+    # Ändert die Rolle des Nutzers (Admin/Gast)
+    def rolle_aendern(self):
+        nid = self.e_id.get()
+        rolle = self.e_rolle.get()
+        if nid.isdigit() and rolle in ["1", "2"]:
+            rolle_aendern(int(nid), int(rolle))
+            messagebox.showinfo("Erfolg", "Rolle geändert.")
+            self.e_id.delete(0, tk.END)
+            self.e_rolle.delete(0, tk.END)
+        else:
+            messagebox.showerror("Fehler", "Ungültige Eingaben.")
+
+    # Löscht den Nutzer mit angegebener ID
+    def loeschen(self):
+        nid = self.e_id.get()
+        if nid.isdigit():
+            nutzer_loeschen(int(nid))
+            messagebox.showinfo("Erfolg", "Nutzer gelöscht.")
+            self.e_id.delete(0, tk.END)
+            self.e_rolle.delete(0, tk.END)
+        else:
+            messagebox.showerror("Fehler", "Ungültige ID.")
+
+    # Zurück zur Nutzerverwaltung + Aktualisierung der Liste
+    def zurueck_und_aktualisieren(self):
+        self.controller.frames[NutzerVerwaltung].lade_inhalt()
+        self.controller.show_frame(NutzerVerwaltung)
+
