@@ -26,6 +26,7 @@ def registrieren(benutzername,passwort):
     messagebox.showinfo("Erfolg", "Registrierung war erfolgreich!")
     return True
 
+#Nutzer Login
 def login(benutzername, passwort):
     conn = verbinde_db()
     cursor = conn.cursor()
