@@ -1,0 +1,22 @@
+from datenbankverbindung import verbinde_db
+
+#Alle Biere mit Brauerei anzeigen
+def hole_alle_biere():
+    conn = verbinde_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT bier.id, bier.name, bierstil.bezeichnung AS stil,
+               bier.alkoholgehalt, bier.preis,
+               IFNULL(brauerei.name, 'Unbekannt') AS brauerei_name,
+               ROUND(AVG(bewertung.sterne), 1) AS durchschnitt
+        FROM bier
+        JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
+        LEFT JOIN bewertung ON bier.id = bewertung.bier_id
+        GROUP BY bier.id, bier.name, bierstil.bezeichnung, bier.alkoholgehalt,
+                 bier.preis, brauerei.name
+        ORDER BY bier.name
+    """)
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
