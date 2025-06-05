@@ -715,7 +715,7 @@ class GastMenue(tk.Frame):
         from biere import hole_alle_biere_fuer_gaeste
         for bier in hole_alle_biere_fuer_gaeste():
             if bier[1] == biername:
-                return bier[0]
+                return bier[0]  # jetzt korrekt: bier.id
         return None
     
     # Zeigt Top 5 am besten bewertete Biere

@@ -27,6 +27,7 @@ def hole_alle_biere_fuer_gaeste():
     cursor = conn.cursor()
     cursor.execute("""
         SELECT 
+            bier.id,
             bier.name,
             bierstil.bezeichnung,
             bier.alkoholgehalt,
@@ -39,7 +40,7 @@ def hole_alle_biere_fuer_gaeste():
         LEFT JOIN ort ON brauerei.ort_id = ort.ID_Ort
         LEFT JOIN bierstil ON bierstil.id = bier.bierstil_id
         LEFT JOIN bewertung ON bier.id = bewertung.bier_id
-        GROUP BY bier.name, bierstil.bezeichnung, bier.alkoholgehalt, bier.preis, brauerei.name, ort.Ort
+        GROUP BY bier.id, bier.name, bierstil.bezeichnung, bier.alkoholgehalt, bier.preis, brauerei.name, ort.Ort
     """)
     daten = cursor.fetchall()
     conn.close()
