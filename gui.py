@@ -587,6 +587,8 @@ class GastMenue(tk.Frame):
             self.tree.column(spalte, anchor="center", width=120)
         self.tree.pack(fill="both", expand=True, padx=10, pady=10)
         self.tree.bind("<Double-1>", self.bewertung_popup)
+        # Hinweis für Benutzer zur Bewertung
+        tk.Label(self, text="💬 Doppelklick auf ein Bier, um es zu bewerten.", fg="gray").pack(pady=(0, 10))
 
         # Logout
         tk.Button(self, text="Logout", command=lambda: controller.show_frame(LoginSeite)).pack(pady=10)
