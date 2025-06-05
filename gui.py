@@ -13,7 +13,7 @@ class App(tk.Tk):
         super().__init__()
         self.nutzer_id = None  
         self.title("Bierdatenbank")
-        self.geometry("900x600")
+        self.geometry("1100x700")
 
         self.container = tk.Frame(self)
         self.container.pack(fill="both", expand=True)
@@ -76,7 +76,7 @@ class LoginSeite(tk.Frame):
     def registrieren(self):
         reg_win = tk.Toplevel(self)
         reg_win.title("Registrieren")
-        reg_win.geometry("400x300")
+        reg_win.geometry("500x350")
 
         tk.Label(reg_win, text="Benutzername").pack()
         e_name = tk.Entry(reg_win)
@@ -247,7 +247,7 @@ class BiereVerwaltung(tk.Frame):
         self.tree = ttk.Treeview(self, columns=spalten, show="headings")
         for spalte in spalten:
             self.tree.heading(spalte, text=spalte)
-            self.tree.column(spalte, anchor="center", width=100)
+            self.tree.column(spalte, anchor="center", width=150)
         self.tree.pack(fill="both", expand=True, padx=10, pady=10)
 
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
