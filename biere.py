@@ -113,9 +113,11 @@ def hole_top_biere(limit=5):
             bier.alkoholgehalt,
             bier.preis,
             IFNULL(brauerei.name, 'Unbekannt') AS brauerei_name,
+            ort.Ort,
             ROUND(AVG(bewertung.sterne), 2) AS durchschnitt
         FROM bier
         LEFT JOIN brauerei ON bier.brauerei_id = brauerei.id
+        LEFT JOIN ort ON brauerei.ort_id = ort.ID_Ort
         LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
         LEFT JOIN bewertung ON bier.id = bewertung.bier_id
         GROUP BY bier.id

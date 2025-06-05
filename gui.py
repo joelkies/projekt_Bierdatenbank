@@ -724,5 +724,5 @@ class GastMenue(tk.Frame):
         self.tree.delete(*self.tree.get_children())
         daten = hole_top_biere()
         for row in daten:
-            self.tree.insert("", "end", values=row[1:])
+            self.tree.insert("", "end", values=row)
 
