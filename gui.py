@@ -7,6 +7,39 @@ from nutzer import hole_alle_nutzer, nutzer_loeschen, rolle_aendern, nutzer_such
 from brauereien import hole_alle_brauereien, brauerei_hinzufuegen, brauerei_loeschen
 from biere import hole_alle_biere, bier_hinzufuegen, bier_loeschen, hole_brauereien_dropdown, suche_biere
 
+# Erweiterung der ttk.Combobox mit Autovervollständigung beim Tippen
+class AutocompleteCombobox(ttk.Combobox):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self._completion_list = []
+        self._hits = []
+        self._var = self["textvariable"] = tk.StringVar()
+        self._var.trace("w", self._on_change)
+        self.bind("<Down>", self._on_down)
+
+    def set_completion_list(self, completion_list):
+        self._completion_list = sorted(completion_list, key=str.lower)
+        self["values"] = self._completion_list
+
+    def _on_change(self, name, index, mode):
+        pattern = self._var.get().lower()
+        if pattern == "":
+            self["values"] = self._completion_list
+            return
+        self._hits = [item for item in self._completion_list if pattern in item.lower()]
+        self["values"] = self._hits
+        if self._hits:
+            self.event_generate("<Down>")
+
+    def _on_down(self, event):
+        if self["values"]:
+            self.focus()
+            self.event_generate("<Button-1>")
+
+
+
+
+
 #Hauptfenster der App
 class App(tk.Tk):
     def __init__(self):
@@ -418,7 +451,7 @@ class BrauereiHinzufuegen(tk.Frame):
 
         tk.Label(self, text="➕ Brauerei hinzufügen", font=("Arial", 16)).pack(pady=10)
 
-        labels = ["Name", "Straße", "Hausnummer", "Ort-ID", "Website", "Gründungsjahr"]
+        labels = ["Name", "Straße", "Hausnummer", "Website", "Gründungsjahr"]
         self.entries = []
 
         for label in labels:
@@ -427,20 +460,72 @@ class BrauereiHinzufuegen(tk.Frame):
             entry.pack()
             self.entries.append(entry)
 
+        # Ort-Dropdown mit Autovervollständigung
+        from ort import hole_orte_dropdown  # Stelle sicher, dass ort.py existiert!
+        tk.Label(self, text="Ort wählen:").pack()
+        self.orte = hole_orte_dropdown()
+        ort_strings = [f"{id} - {ort} ({plz})" for id, ort, plz in self.orte]
+
+        # Jetzt unsere neue Combobox nutzen
+        self.ort_dropdown = AutocompleteCombobox(self)
+        self.ort_dropdown.set_completion_list(ort_strings)
+        self.ort_dropdown.pack()
+
+
+
+
+
+
+
+
+
+
         tk.Button(self, text="Speichern", command=self.speichern).pack(pady=5)
         tk.Button(self, text="↩ Zurück", command=self.zurueck).pack()
 
     # Speichert die eingegebenen Brauerei-Daten in der Datenbank
     def speichern(self):
         from brauereien import brauerei_hinzufuegen
-        daten = [e.get() for e in self.entries]
-        if daten[0]:
-            brauerei_hinzufuegen(*daten)
-            tk.messagebox.showinfo("Erfolg", "Brauerei wurde hinzugefügt!")
-            self.controller.frames[BrauereienVerwaltung].lade_inhalt()
-            self.controller.show_frame(BrauereienVerwaltung)
-        else:
-            tk.messagebox.showerror("Fehler", "Name darf nicht leer sein.")
+
+        daten = [e.get() for e in self.entries]  # Name, Straße, Hausnr, Website, Jahr
+        ort_auswahl = self.ort_dropdown.get()
+
+        if not daten[0] or not ort_auswahl:
+            tk.messagebox.showerror("Fehler", "Name und Ort müssen angegeben sein.")
+            return
+
+        try:
+            ort_id = int(ort_auswahl.split(" - ")[0])  # ID extrahieren z. B. aus "23 - Nürnberg (90402)"
+        except:
+            tk.messagebox.showerror("Fehler", "Ungültige Ort-Auswahl.")
+            return
+
+        adresse = f"{daten[1]} {daten[2]}"  # Straße + Hausnummer
+        website = daten[3]
+        jahr = daten[4]
+
+        brauerei_hinzufuegen(daten[0], ort_id, None, adresse, website, jahr)
+
+        tk.messagebox.showinfo("Erfolg", "Brauerei wurde hinzugefügt!")
+        self.controller.frames[BrauereienVerwaltung].lade_inhalt()
+        self.controller.show_frame(BrauereienVerwaltung)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Zurück zur Brauereien-Verwaltung
     def zurueck(self):
