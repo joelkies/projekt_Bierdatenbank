@@ -146,10 +146,10 @@ def suche_biere_erweitert(suchbegriff="", max_alkohol=None, max_preis=None):
         LEFT JOIN ort o ON brauerei.ort_id = o.ID_Ort
         LEFT JOIN bierstil ON bier.bierstil_id = bierstil.id
         LEFT JOIN bewertung ON bier.id = bewertung.bier_id
-        WHERE (bier.name LIKE %s OR bierstil.bezeichnung LIKE %s)
+        WHERE (bier.name LIKE %s OR bierstil.bezeichnung LIKE %s OR brauerei.name LIKE %s)
     """
 
-    werte = [f"%{suchbegriff}%", f"%{suchbegriff}%"]
+    werte = [f"%{suchbegriff}%", f"%{suchbegriff}%", f"%{suchbegriff}%"]
 
     if max_alkohol is not None:
         sql += " AND bier.alkoholgehalt <= %s"

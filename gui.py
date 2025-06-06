@@ -647,7 +647,7 @@ class GastMenue(tk.Frame):
         tk.Label(self, text="Gästeansicht – Biere entdecken", font=("Arial", 16)).pack(pady=10)
 
         # Suchfeld
-        tk.Label(self, text="Suchbegriff (Name oder Stil):").pack()
+        tk.Label(self, text="Suchbegriff (Name, Stil oder Brauerei):").pack()
         self.e_suche = tk.Entry(self)
         self.e_suche.pack()
 
